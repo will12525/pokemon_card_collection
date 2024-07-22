@@ -111,7 +111,7 @@ class DBConnection:
     def get_row_item(self, query: str, params, item: str):
         return self.get_data_from_db_first_result(query, params).get(item)
 
-    def get_row_id(self, query: str, params: tuple):
+    def get_row_id(self, query: str, params):
         return self.get_row_item(query, params, common_objects.ID_COLUMN)
 
     def check_db_version(self):

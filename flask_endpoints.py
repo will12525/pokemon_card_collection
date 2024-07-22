@@ -3,6 +3,7 @@ import os
 from enum import Enum
 from flask import Response
 from flask import Flask, request, render_template, jsonify
+from flask_minify import Minify
 
 from database_handler import common_objects
 from database_handler.common_objects import DBType
@@ -38,6 +39,7 @@ from database_handler.input_file_parser import load_set_data_dir
 
 
 app = Flask(__name__)
+Minify(app=app, html=True, js=True, cssless=True)
 app.jinja_env.lstrip_blocks = True
 app.jinja_env.trim_blocks = True
 
@@ -45,6 +47,7 @@ app.jinja_env.trim_blocks = True
 class APIEndpoints(Enum):
     MAIN = "/"
     GET_SET_CARD_LIST = "/get_set_card_list"
+    GET_SET_CARD_LIST_HTML = "/get_set_card_list_html"
     UPDATE_HAVE = "/update_have"
     UPDATE_WANT = "/update_want"
     GIFTED = "/gifted"
@@ -72,17 +75,41 @@ def index():
     return render_template("index.html", python_metadata=python_metadata)
 
 
+@app.route(APIEndpoints.GET_SET_CARD_LIST_HTML.value, methods=["POST"])
+def get_set_card_list_html():
+    meta_data = {}
+    if json_request := request.get_json():
+        with DatabaseHandler() as db_getter_connection:
+            meta_data.update(
+                db_getter_connection.query_cards(
+                    json_request.get(common_objects.SET_NAME_COLUMN),
+                    json_request.get("filter_str"),
+                    json_request.get("card_name_search_query"),
+                    json_request.get("filter_ownership"),
+                    json_request.get("card_season_search_query"),
+                )
+            )
+
+    return render_template(
+        "card_list_template_jinja.html",
+        meta_data=meta_data,
+    )
+
+
 @app.route(APIEndpoints.GET_SET_CARD_LIST.value, methods=["POST"])
 def get_set_card_list():
     data = {}
     if json_request := request.get_json():
         with DatabaseHandler() as db_getter_connection:
             data.update(
-                db_getter_connection.query_cards(json_request.get(common_objects.SET_NAME_COLUMN),
-                                                 json_request.get("filter_str"),
-                                                 json_request.get("card_name_search_query"),
-                                                 json_request.get("filter_ownership"),
-                                                 json_request.get("card_season_search_query")))
+                db_getter_connection.query_cards(
+                    json_request.get(common_objects.SET_NAME_COLUMN),
+                    json_request.get("filter_str"),
+                    json_request.get("card_name_search_query"),
+                    json_request.get("filter_ownership"),
+                    json_request.get("card_season_search_query"),
+                )
+            )
             data["set_list"] = db_getter_connection.get_sets()
     return jsonify(data), 200
 

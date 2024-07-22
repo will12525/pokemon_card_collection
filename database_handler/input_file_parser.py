@@ -88,8 +88,8 @@ class TableDataExtractor:
             row_dict[common_objects.STATE_WANT_COLUMN] = int(cells[1].text.strip())
 
             if (
-                    row_dict[common_objects.STATE_WANT_COLUMN] == 0
-                    and row_dict[common_objects.STATE_HAVE_COLUMN] == 0
+                row_dict[common_objects.STATE_WANT_COLUMN] == 0
+                and row_dict[common_objects.STATE_HAVE_COLUMN] == 0
             ):
                 row_dict[common_objects.STATE_WANT_COLUMN] = 1
 
@@ -122,42 +122,32 @@ class TableDataExtractor:
                 continue
 
             if card_rarity_search := re.search(
-                    card_rarity_regex, row_dict[common_objects.CARD_NAME_COLUMN]
+                card_rarity_regex, row_dict[common_objects.CARD_NAME_COLUMN]
             ):
                 row_dict[common_objects.CARD_RARITY_COLUMN] = (
                     card_rarity_search.groups()[-1]
                 )
                 row_dict[common_objects.CARD_NAME_COLUMN] = row_dict[
-                                                                common_objects.CARD_NAME_COLUMN
-                                                            ][: card_rarity_search.span()[0]].strip()
+                    common_objects.CARD_NAME_COLUMN
+                ][: card_rarity_search.span()[0]].strip()
             if card_index_search := re.search(
-                    card_index_division_regex, row_dict[common_objects.CARD_NAME_COLUMN]
-            ):
-                # print(f"Division: {card_index_search.groups()[0]}")
-                row_dict[common_objects.CARD_INDEX_COLUMN] = int(
-                    card_index_search.groups()[0]
-                )
-                row_dict[common_objects.CARD_NAME_COLUMN] = row_dict[
-                                                                common_objects.CARD_NAME_COLUMN
-                                                            ][: card_index_search.span()[0]].strip()
-                # print(
-                #     row_dict[common_objects.CARD_NAME_COLUMN],
-                #     row_dict[common_objects.CARD_INDEX_COLUMN],
-                # )
-            if card_index_search := re.search(
-                    card_index_regex, row_dict[common_objects.CARD_NAME_COLUMN]
+                card_index_division_regex, row_dict[common_objects.CARD_NAME_COLUMN]
             ):
                 row_dict[common_objects.CARD_INDEX_COLUMN] = int(
                     card_index_search.groups()[0]
                 )
                 row_dict[common_objects.CARD_NAME_COLUMN] = row_dict[
-                                                                common_objects.CARD_NAME_COLUMN
-                                                            ][: card_index_search.span()[0]].strip()
-
-                # print(
-                #     row_dict[common_objects.CARD_NAME_COLUMN],
-                #     row_dict[common_objects.CARD_INDEX_COLUMN],
-                # )
+                    common_objects.CARD_NAME_COLUMN
+                ][: card_index_search.span()[0]].strip()
+            if card_index_search := re.search(
+                card_index_regex, row_dict[common_objects.CARD_NAME_COLUMN]
+            ):
+                row_dict[common_objects.CARD_INDEX_COLUMN] = int(
+                    card_index_search.groups()[0]
+                )
+                row_dict[common_objects.CARD_NAME_COLUMN] = row_dict[
+                    common_objects.CARD_NAME_COLUMN
+                ][: card_index_search.span()[0]].strip()
 
             url_card_link = row.find("a").get("href")
             if url_card_link:
@@ -211,6 +201,113 @@ class TableDataExtractor:
         # print(json.dumps(table_data, indent=4))
         print(common_objects.get_set_card_count(set_name) - len(table_data), set_name)
         # assert len(table_data) == common_objects.get_set_card_count(set_name)
+        return table_data
+
+    def extract_string(self, input_str: str):
+        input_str = input_str.strip()
+        input_str = input_str.replace("\u00e2\u2122\u201a", " M")
+        input_str = input_str.replace("\u00c3\u00a9", "e")
+        input_str = input_str.replace("\u00e2\u2122\u20ac", " F")
+        input_str = input_str.replace("\u00ce\u00b1", "Alpha")
+        input_str = input_str.replace("\u00ce\u00b2", "Beta")
+        input_str = input_str.replace("\u00ce\u00b3", "Gamma")
+        input_str = input_str.replace("\u00ce\u00b4", "Delta")
+        input_str = input_str.replace("\n        ", " ")
+        input_str = input_str.replace("\n", " ")
+        input_str = input_str.replace("\u00e2\u02dc\u2020", "star")
+        input_str = input_str.replace("\u00a0", " ")
+        # if str("\\") in input_str:
+        #     print(input_str)
+        return input_str
+
+    def extract_card_index(self, row_dict, card_index_str):
+        card_index_division_regex = "(\d+)/\d+"
+        row_dict[common_objects.CARD_INDEX_COLUMN] = card_index_str
+        if card_index_search := re.search(card_index_division_regex, card_index_str):
+            # print(f"Division: {card_index_search.groups()[0]}")
+            row_dict[common_objects.CARD_INDEX_COLUMN] = int(
+                card_index_search.groups()[0]
+            )
+        elif card_index_search := re.search("H(\d+)/H\d+", card_index_str):
+            row_dict[common_objects.CARD_INDEX_COLUMN] = int(
+                card_index_search.groups()[0]
+            )
+        elif card_index_search := re.search("RC(\d+)/RC\d+", card_index_str):
+            row_dict[common_objects.CARD_INDEX_COLUMN] = int(
+                card_index_search.groups()[0]
+            )
+        elif card_index_search := re.search("TG(\d+)/TG\d+", card_index_str):
+            row_dict[common_objects.CARD_INDEX_COLUMN] = int(
+                card_index_search.groups()[0]
+            )
+        elif card_index_search := re.search("(\d+)a/\d+", card_index_str):
+            row_dict[common_objects.CARD_INDEX_COLUMN] = int(
+                card_index_search.groups()[0]
+            )
+        elif card_index_search := re.search("(\d+)b/\d+", card_index_str):
+            row_dict[common_objects.CARD_INDEX_COLUMN] = int(
+                card_index_search.groups()[0]
+            )
+        elif "ONE" == card_index_str:
+            row_dict[common_objects.CARD_INDEX_COLUMN] = 1
+        elif "TWO" == card_index_str:
+            row_dict[common_objects.CARD_INDEX_COLUMN] = 2
+        elif "THREE" == card_index_str:
+            row_dict[common_objects.CARD_INDEX_COLUMN] = 3
+        elif "FOUR" == card_index_str:
+            row_dict[common_objects.CARD_INDEX_COLUMN] = 4
+        else:
+            row_dict["error"] = row_dict[common_objects.CARD_INDEX_COLUMN]
+            print(json.dumps(row_dict, indent=4))
+            # input("Next:")
+
+    def extract_set_card_list_data(self, html_soup):
+        table_data = []
+
+        table = html_soup.find("tbody")
+
+        set_name = ""
+
+        # Check if table exists
+        if not table:
+            return table_data
+
+        # track_card_name = "Dugtrio"
+        first_index_header = True
+        # Extract headers and table data
+        for row in table.find_all("tr"):
+            if first_index_header:
+                first_index_header = False
+                continue
+
+            row_dict = {}
+            # track_card = False
+            cells = row.find_all(["td", "th"])
+            # row_dict[common_objects.STATE_HAVE_COLUMN] = int(cells[0].text.strip())
+            # print(len(cells))
+            # print(cells)
+            if cells and len(cells) == 6:
+
+                # row_dict[common_objects.CARD_INDEX_COLUMN] = cells[0].text.strip()
+                row_dict[common_objects.CARD_NAME_COLUMN] = self.extract_string(
+                    cells[2].text
+                )
+                card_type_a = cells[3].find("a")
+                if card_type_a and card_type_a.has_attr("title"):
+                    row_dict[common_objects.CARD_TYPE_COLUMN] = str(
+                        card_type_a.get("title")
+                    )
+                card_rarity_a = cells[4].find("a")
+                if card_rarity_a and card_rarity_a.has_attr("title"):
+                    row_dict[common_objects.CARD_RARITY_COLUMN] = self.extract_string(
+                        card_rarity_a.get("title")
+                    )
+                self.extract_card_index(row_dict, cells[0].text.strip())
+                #     print(cells[1].text)
+                # table_data["found"] = True
+                # row_dict["len"] = len(cells)
+                table_data.append(row_dict)
+                # print(cells)
         return table_data
 
     #
@@ -333,9 +430,25 @@ def load_set_data_dir(folder_path):
         # yield set_data
 
 
-def get_sbi_set_data():
+def get_pedia_set_data(set_card_list_htmls_path):
     # Pass in the name of the set
-    pass
+    modified_path = set_card_list_htmls_path.replace(":", "")
+    if os.path.exists(modified_path):
+        extractor = TableDataExtractor()
+        set_soup = get_html_soup_from_path(set_card_list_htmls_path.replace(":", ""))
+        return extractor.extract_set_card_list_data(set_soup)
+    return "Missing file"
+
+
+def get_all_cards_matching_name(card_name, card_list):
+    ret_list = []
+    for card in card_list:
+        if card.get(common_objects.CARD_NAME_COLUMN) in card_name:
+            ret_list.append(card)
+        # elif card_name in card.get(common_objects.CARD_NAME_COLUMN):
+        #     ret_list.append(card)
+    return ret_list
+
 
 #
 # def main():

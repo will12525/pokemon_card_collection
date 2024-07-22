@@ -38,7 +38,17 @@ class DatabaseHandler(DBConnection):
     SORT_ALPHABETICAL = "GLOB '[A-Za-z]*'"
 
     BASE_QUERY = f"FROM {common_objects.CARD_INFO_TABLE} INNER JOIN {common_objects.SET_INFO_TABLE} ON {common_objects.CARD_INFO_TABLE}.{common_objects.SET_ID_COLUMN} = {common_objects.SET_INFO_TABLE}.{common_objects.ID_COLUMN}"
-    STAT_QUERY_SELECT = f"SELECT COUNT(NULLIF({common_objects.STATE_HAVE_COLUMN},0)) AS count_have, COUNT(NULLIF({common_objects.STATE_WANT_COLUMN}, 0)) AS count_want, SUM(CASE WHEN {common_objects.STATE_WANT_COLUMN} > 0 THEN {common_objects.PRICE_COLUMN} ELSE 0 END) AS price_want, SUM(CASE WHEN {common_objects.STATE_HAVE_COLUMN} > 0 THEN {common_objects.PRICE_COLUMN} ELSE 0 END) AS price_have, SUM({common_objects.PRICE_COLUMN}) AS sum_price, COUNT(1) AS count_cards"
+    STAT_QUERY_SELECT = " ".join(
+        [
+            f"SELECT",
+            f"COUNT(NULLIF({common_objects.STATE_HAVE_COLUMN}, 0)) AS count_have,",
+            f"COUNT(NULLIF({common_objects.STATE_WANT_COLUMN}, 0)) AS count_want,",
+            f"ROUND(SUM(CASE WHEN {common_objects.STATE_WANT_COLUMN} > 0 THEN {common_objects.PRICE_COLUMN} ELSE 0 END), 2) AS price_want,",
+            f"ROUND(SUM(CASE WHEN {common_objects.STATE_HAVE_COLUMN} > 0 THEN {common_objects.PRICE_COLUMN} ELSE 0 END), 2) AS price_have,",
+            f"ROUND(SUM({common_objects.PRICE_COLUMN}), 2) AS sum_price,",
+            f"COUNT(1) AS count_cards",
+        ]
+    )
 
     def get_sort_order(self, filter_str):
         sort_order = ""
@@ -58,7 +68,14 @@ class DatabaseHandler(DBConnection):
             sort_order = ""
         return sort_order
 
-    def query_cards(self, set_name, filter_str, card_name_search_query, filter_ownership, card_season_search_query):
+    def query_cards(
+        self,
+        set_name,
+        filter_str,
+        card_name_search_query,
+        filter_ownership,
+        card_set_search_query,
+    ):
         ret_data = {}
         params = {}
         where_clauses = []
@@ -77,13 +94,11 @@ class DatabaseHandler(DBConnection):
             )
             params["card_name_search_query"] = f"%{card_name_search_query}%"
 
-        print(card_season_search_query)
-
-        if card_season_search_query:
+        if card_set_search_query:
             where_clauses.append(
                 f"{common_objects.SET_INFO_TABLE}.{common_objects.SET_NAME_COLUMN} LIKE :card_season_search_query"
             )
-            params["card_season_search_query"] = f"%{card_season_search_query}%"
+            params["card_season_search_query"] = f"%{card_set_search_query}%"
 
         if filter_ownership:
             if filter_ownership == "have":
@@ -108,8 +123,8 @@ class DatabaseHandler(DBConnection):
         )
         if ret_data["count_cards"] > 0:
             ret_data["percent_complete"] = (
-                                                   ret_data["count_have"] / ret_data["count_cards"]
-                                           ) * 100
+                ret_data["count_have"] / ret_data["count_cards"]
+            ) * 100
         return ret_data
 
     def get_sets(self):
@@ -124,6 +139,13 @@ class DatabaseHandler(DBConnection):
             "set_card_count",
         )
 
+    def get_null_card_index_count(self, params):
+        return self.get_row_item(
+            f"SELECT COUNT(CASE WHEN {common_objects.CARD_INDEX_COLUMN} IS NULL THEN 1 ELSE NULL END) AS null_card_index_count FROM {common_objects.CARD_INFO_TABLE} WHERE {common_objects.SET_ID_COLUMN}=:{common_objects.ID_COLUMN};",
+            params,
+            "null_card_index_count",
+        )
+
     def get_card_from_id(self, params):
         return self.get_data_from_db_first_result(
             f"SELECT * FROM {common_objects.CARD_INFO_TABLE} WHERE {common_objects.TCGP_ID_COLUMN}=:{common_objects.TCGP_ID_COLUMN};",
@@ -133,6 +155,12 @@ class DatabaseHandler(DBConnection):
     def get_all_ids(self):
         return self.get_data_from_db(
             f"SELECT {common_objects.TCGP_ID_COLUMN} FROM {common_objects.CARD_INFO_TABLE};"
+        )
+
+    def get_card_with_set_index(self, params):
+        return self.get_data_from_db_first_result(
+            f"SELECT {common_objects.TCGP_ID_COLUMN} FROM {common_objects.CARD_INFO_TABLE} WHERE {common_objects.SET_ID_COLUMN}=:{common_objects.SET_ID_COLUMN} AND {common_objects.CARD_INDEX_COLUMN}=:{common_objects.CARD_INDEX_COLUMN};",
+            params,
         )
 
     def increase_want(self, params):

@@ -83,6 +83,13 @@ class DBCreator(DBConnection):
                 card[common_objects.SET_ID_COLUMN] = set_id
             self.set_card_metadata(card)
 
+    def insert_card(self, card):
+        card[common_objects.SET_ID_COLUMN] = self.get_set_id_from_name(
+            card.get(common_objects.SET_NAME_COLUMN)
+        )
+        print(card)
+        self.set_card_metadata(card)
+
     def set_set_data(self, set_data):
         return self.add_data_to_db(sql_insert_set_info_table, set_data)
 
