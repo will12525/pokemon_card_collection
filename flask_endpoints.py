@@ -3,7 +3,7 @@ import os
 from enum import Enum
 from flask import Response
 from flask import Flask, request, render_template, jsonify
-from flask_minify import Minify
+from flask_minify import minify
 
 from database_handler import common_objects
 from database_handler.common_objects import DBType
@@ -39,7 +39,7 @@ from database_handler.input_file_parser import load_set_data_dir
 
 
 app = Flask(__name__)
-Minify(app=app, html=True, js=True, cssless=True)
+minify(app=app, html=True, js=True, cssless=True)
 app.jinja_env.lstrip_blocks = True
 app.jinja_env.trim_blocks = True
 
@@ -91,7 +91,7 @@ def get_set_card_list_html():
             )
 
     return render_template(
-        "card_list_template_jinja.html",
+        "card_list_template_jinja.min.html",
         meta_data=meta_data,
     )
 

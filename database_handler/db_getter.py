@@ -41,8 +41,8 @@ class DatabaseHandler(DBConnection):
     STAT_QUERY_SELECT = " ".join(
         [
             f"SELECT",
-            f"COUNT(NULLIF({common_objects.STATE_HAVE_COLUMN}, 0)) AS count_have,",
-            f"COUNT(NULLIF({common_objects.STATE_WANT_COLUMN}, 0)) AS count_want,",
+            f"SUM({common_objects.STATE_HAVE_COLUMN}) AS count_have,",
+            f"SUM({common_objects.STATE_WANT_COLUMN}) AS count_want,",
             f"ROUND(SUM(CASE WHEN {common_objects.STATE_WANT_COLUMN} > 0 THEN {common_objects.PRICE_COLUMN} ELSE 0 END), 2) AS price_want,",
             f"ROUND(SUM(CASE WHEN {common_objects.STATE_HAVE_COLUMN} > 0 THEN {common_objects.PRICE_COLUMN} ELSE 0 END), 2) AS price_have,",
             f"ROUND(SUM({common_objects.PRICE_COLUMN}), 2) AS sum_price,",
@@ -55,7 +55,11 @@ class DatabaseHandler(DBConnection):
         if filter_str == "Sets":
             sort_order = f"ORDER BY {common_objects.SET_INFO_TABLE}.{common_objects.SET_INDEX_COLUMN} ASC, {common_objects.CARD_INFO_TABLE}.{common_objects.CARD_INDEX_COLUMN} NULLS LAST, {common_objects.CARD_NAME_COLUMN}"
         elif filter_str == "Sets Reverse":
-            sort_order = f"ORDER BY {common_objects.SET_INFO_TABLE}.{common_objects.SET_INDEX_COLUMN} DESC, {common_objects.CARD_INFO_TABLE}.{common_objects.CARD_INDEX_COLUMN} NULLS LAST, {common_objects.CARD_NAME_COLUMN}"
+            sort_order = f"ORDER BY {common_objects.SET_INFO_TABLE}.{common_objects.SET_INDEX_COLUMN} DESC, {common_objects.CARD_INFO_TABLE}.{common_objects.CARD_INDEX_COLUMN} DESC NULLS LAST, {common_objects.CARD_NAME_COLUMN} DESC"
+        elif filter_str == "Card Index":
+            sort_order = f"ORDER BY {common_objects.CARD_INFO_TABLE}.{common_objects.CARD_INDEX_COLUMN} ASC NULLS LAST, {common_objects.SET_INFO_TABLE}.{common_objects.SET_INDEX_COLUMN}, {common_objects.CARD_NAME_COLUMN}"
+        elif filter_str == "Card Index Reverse":
+            sort_order = f"ORDER BY {common_objects.CARD_INFO_TABLE}.{common_objects.CARD_INDEX_COLUMN} DESC NULLS LAST, {common_objects.SET_INFO_TABLE}.{common_objects.SET_INDEX_COLUMN} DESC, {common_objects.CARD_NAME_COLUMN} DESC"
         elif filter_str == "A-Z":
             sort_order = f"ORDER BY {common_objects.CARD_NAME_COLUMN}"
         elif filter_str == "Z-A":
@@ -64,6 +68,10 @@ class DatabaseHandler(DBConnection):
             sort_order = f"ORDER BY {common_objects.PRICE_COLUMN}"
         elif filter_str == "Price: High - Low":
             sort_order = f"ORDER BY {common_objects.PRICE_COLUMN} DESC"
+        elif filter_str == "Have":
+            sort_order = f"ORDER BY {common_objects.STATE_HAVE_COLUMN} DESC"
+        elif filter_str == "Want":
+            sort_order = f"ORDER BY {common_objects.STATE_WANT_COLUMN} DESC"
         else:
             sort_order = ""
         return sort_order
@@ -122,9 +130,9 @@ class DatabaseHandler(DBConnection):
             )
         )
         if ret_data["count_cards"] > 0:
-            ret_data["percent_complete"] = (
-                ret_data["count_have"] / ret_data["count_cards"]
-            ) * 100
+            ret_data["percent_complete"] = round(
+                (ret_data["count_have"] / ret_data["count_cards"]) * 100
+            )
         return ret_data
 
     def get_sets(self):

@@ -75,6 +75,15 @@ async function gifted(tcgp_id) {
     };
     response_data = fetchAndSetData(url, data)
 }
+async function swap_own(event) {
+    var url = "/swap_own";
+    console.log(event)
+    let data = {
+        "tcgp_id": event.target.dataset.extraData,
+        "state_have": parseInt(event.target.value, 10)
+    };
+//    response_data = fetchAndSetData(url, data)
+}
 async function update_have(event) {
     var url = "/update_have";
     let data = {
@@ -115,6 +124,21 @@ async function queryDB(data) {
         .then(htmlContent => {
             const dynamicContent = document.getElementById("card_container");
             dynamicContent.innerHTML = htmlContent;
+//             for (const element of document.querySelectorAll(".card_index_input_class")) {
+//              element.addEventListener("click", update_card_index);
+//            }
+//
+//            for (const element of document.querySelectorAll(".card_have_input_class")) {
+//              element.addEventListener("click", update_have);
+//            }
+//
+//            for (const element of document.querySelectorAll(".card_want_input_class")) {
+//              element.addEventListener("click", update_want);
+//            }
+//
+//            for (const element of document.querySelectorAll(".card_swap_input_class")) {
+//              element.addEventListener("click", swap_own);
+//            }
         })
         .catch(error => console.error(error));
     document.getElementById("rainbow_loading_bar").hidden = true
