@@ -169,6 +169,7 @@ tcgp_set_info = [
     {"name": "SV05: Temporal Forces", "card_count": 218},
     {"name": "SV06: Twilight Masquerade", "card_count": 226},
     {"name": "SV07: Stellar Crown", "card_count": 170},
+    {"name": "SV08: Surging Sparks", "card_count": 252},
 ]
 
 

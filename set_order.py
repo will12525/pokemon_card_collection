@@ -218,6 +218,8 @@ set_info = [
     {"name": "SV04: Paradox Rift", "pedia_name": "Paradox Rift"},
     {"name": "SV05: Temporal Forces", "pedia_name": "Temporal Forces"},
     {"name": "SV06: Twilight Masquerade", "pedia_name": "Twilight Masquerade"},
+    {"name": "SV07: Stellar Crown", "pedia_name": "Stellar Crown"},
+    {"name": "SV08: Surging Sparks", "pedia_name": "Surging Sparks"},
 ]
 
 
